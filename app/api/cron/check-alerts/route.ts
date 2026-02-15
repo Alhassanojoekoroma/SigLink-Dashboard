@@ -1,7 +1,7 @@
 
 import { NextResponse } from 'next/server'
 import { getAlerts, getNotificationEmails } from '@/lib/data'
-import { sendExpirationAlert, sendadminAlert } from '@/lib/email'
+import { sendExpirationAlert, sendAdminAlert } from '@/lib/email'
 
 // This route can be called by Vercel Cron or manually
 export async function GET() {
@@ -21,7 +21,9 @@ export async function GET() {
                 customerEmail,
                 alert.organization_name,
                 alert.days_remaining,
-                new Date(alert.end_date).toLocaleDateString()
+                new Date(alert.end_date).toLocaleDateString(),
+                alert.package_name,
+                alert.station_nickname
             )
             console.log(`Sent customer alert to ${alert.organization_name}`)
             emailCount++
@@ -29,11 +31,13 @@ export async function GET() {
             // Send to admins
             for (const admin of adminEmails) {
                 if (admin.active) {
-                    await sendadminAlert(
+                    await sendAdminAlert(
                         admin.email,
                         alert.organization_name,
                         alert.days_remaining,
-                        new Date(alert.end_date).toLocaleDateString()
+                        new Date(alert.end_date).toLocaleDateString(),
+                        alert.package_name,
+                        alert.station_nickname
                     )
                     console.log(`Sent admin alert to ${admin.email}`)
                     emailCount++
