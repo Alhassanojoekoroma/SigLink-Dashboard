@@ -98,6 +98,9 @@ function StationList({
             <TableHead className="text-xs font-semibold uppercase tracking-wider">
               End Date
             </TableHead>
+            <TableHead className="hidden text-xs font-semibold uppercase tracking-wider xl:table-cell">
+              Internal Admin
+            </TableHead>
             <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">
               Action
             </TableHead>
@@ -191,6 +194,9 @@ function StationList({
                   )}>
                     {formatDate(station.end_date)}
                   </span>
+                </TableCell>
+                <TableCell className="hidden text-xs text-muted-foreground xl:table-cell">
+                  {station.admin_email || "N/A"}
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-1">
