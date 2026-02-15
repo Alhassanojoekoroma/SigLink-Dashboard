@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS public.subscriptions (
   end_date TIMESTAMPTZ NOT NULL DEFAULT (now() + interval '30 days'),
   status TEXT NOT NULL DEFAULT 'Active' CHECK (status IN ('Active', 'Pending', 'Inactive')),
   customer_type TEXT NOT NULL DEFAULT 'individual' CHECK (customer_type IN ('business', 'individual')),
+  admin_email TEXT NOT NULL DEFAULT '',
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
