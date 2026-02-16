@@ -94,38 +94,12 @@ export async function addSubscription(
     throw error
   }
 
-  // Perform Emails and Airtable sync in the background so the UI returns instantly
+  // Perform Emails and Airtable sync in the background
   (async () => {
     try {
-      const admins = await getNotificationEmails();
-
-      // 1. Send to customer (Using generic 'to' if Resend restriction applies)
-      const customerEmail = data.email || "recipient@example.com";
-      await sendEmail({
-        to: customerEmail,
-        subject: "Welcome to SigLink - Subscription Active",
-        text: `Your subscription for ${data.package_name} is now active. Station: ${data.station_nickname}. Expires on ${new Date(data.end_date).toLocaleDateString()}.`
-      });
-
-      // 2. Send to admins
-      for (const admin of admins) {
-        if (admin.active !== false && admin.email) {
-          const cleanPkg = data.package_name.replace(/\d+GB/gi, '').trim();
-          await sendEmail({
-            to: admin.email,
-            subject: `SigLink Alert: New Subscription [${data.organization_name}]`,
-            text: `A new subscription has been created.\n\n` +
-              `Organization: ${data.organization_name}\n` +
-              `Contact: ${data.customer_name}\n` +
-              `Station: ${data.station_nickname}\n` +
-              `Package: ${cleanPkg}\n` +
-              `Date: ${new Date(data.start_date).toLocaleDateString()}\n` +
-              `Amount: NLe ${data.amount_paid}`
-          });
-        }
-      }
+      await notifyTransaction(data as Subscription);
     } catch (err) {
-      console.error("Background Email Error:", err);
+      console.error("Background Notification Error:", err);
     }
 
     try {
@@ -136,6 +110,49 @@ export async function addSubscription(
   })();
 
   return data as Subscription;
+}
+
+export async function notifyTransaction(sub: Subscription) {
+  try {
+    const admins = await getNotificationEmails();
+    const cleanPkg = sub.package_name.replace(/\d+GB/gi, '').trim();
+
+    const emailText = `A payment has been confirmed for the subscription.\n\n` +
+      `Organization: ${sub.organization_name}\n` +
+      `Contact: ${sub.customer_name}\n` +
+      `Station: ${sub.station_nickname}\n` +
+      `Package: ${cleanPkg}\n` +
+      `Amount: NLe ${sub.amount_paid.toLocaleString()}\n` +
+      `Start Date: ${new Date(sub.start_date).toLocaleDateString()}\n` +
+      `End Date: ${new Date(sub.end_date).toLocaleDateString()}`;
+
+    // 1. Send to customer
+    if (sub.email) {
+      await sendEmail({
+        to: sub.email,
+        subject: `SigLink Payment Confirmation: ${sub.organization_name}`,
+        text: emailText
+      });
+    }
+
+    // 2. Send to all active admins
+    const activeAdmins = admins.filter(a => a.active !== false && a.email);
+
+    // We send them individually to ensure if one fails (unverified), others might still pass
+    for (const admin of activeAdmins) {
+      try {
+        await sendEmail({
+          to: admin.email,
+          subject: `SigLink Notification: Payment Confirmed [${sub.organization_name}]`,
+          text: emailText
+        });
+      } catch (e) {
+        console.error(`Failed to notify admin ${admin.email}:`, e);
+      }
+    }
+  } catch (err) {
+    console.error("Notify Transaction Error:", err);
+  }
 }
 
 export async function deleteSubscription(subscription_id: string): Promise<boolean> {
@@ -188,8 +205,21 @@ export async function updateSubscription(
     return null
   }
 
-  // OPTIONAL: Sync to Airtable
-  await syncToAirtable(data as Subscription)
+  // Background tasks
+  (async () => {
+    try {
+      // If we updated status to Active or changed amount_paid, it's likely a transaction
+      await notifyTransaction(data as Subscription);
+    } catch (err) {
+      console.error("Update Notification Error:", err);
+    }
+
+    try {
+      await syncToAirtable(data as Subscription)
+    } catch (err) {
+      console.error("Update Airtable Error:", err);
+    }
+  })();
 
   return data as Subscription
 }

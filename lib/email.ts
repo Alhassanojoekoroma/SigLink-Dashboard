@@ -20,15 +20,20 @@ export async function sendEmail(payload: EmailPayload): Promise<boolean> {
         return true;
     }
 
-    const isAlert = payload.subject.toLowerCase().includes('expiring') || payload.subject.toLowerCase().includes('alert');
-    const accentColor = isAlert ? '#e11d48' : '#0033cc';
-    const secondaryColor = isAlert ? '#fff1f2' : '#f5f8ff';
-    const title = isAlert ? 'Subscription Alert' : 'Thank you for your purchase!';
+    const isExpirationAlert = payload.subject.toLowerCase().includes('expiring') || payload.subject.toLowerCase().includes('ended');
+    const isAlert = isExpirationAlert || payload.subject.toLowerCase().includes('alert');
+    const accentColor = isExpirationAlert ? '#e11d48' : '#0033cc';
+    const secondaryColor = isExpirationAlert ? '#fff1f2' : '#f5f8ff';
+    const title = isExpirationAlert ? 'Subscription Alert' : 'Signature Connect Reciept';
 
-    // Parse values from text if needed
-    const packageName = payload.text.split('Package: ')[1]?.split('\n')[0]?.split('.')[0] || 'Internet Subscription';
-    const amount = payload.text.split('Amount: ')[1]?.split('\n')[0] || 'NLe. --';
-    const station = payload.text.split('Station: ')[1]?.split('\n')[0] || 'N/A';
+    // Parse values from text if needed with more robust regex
+    const packageMatch = payload.text.match(/Package:\s*([^\n]+)/i);
+    const amountMatch = payload.text.match(/Amount:\s*([^\n]+)/i);
+    const stationMatch = payload.text.match(/Station:\s*([^\n]+)/i);
+
+    const packageName = packageMatch ? packageMatch[1].trim() : 'Internet Subscription';
+    const amount = amountMatch ? amountMatch[1].trim() : 'NLe. --';
+    const station = stationMatch ? stationMatch[1].trim() : 'N/A';
 
     // Premium HTML Template matching Image 2
     const htmlTemplate = `
@@ -50,10 +55,10 @@ export async function sendEmail(payload: EmailPayload): Promise<boolean> {
             .summary-title { font-size: 13px; font-weight: 800; color: #001a66; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 25px; }
             .item-row { display: flex; justify-content: space-between; margin-bottom: 20px; align-items: center; }
             .item-info { display: flex; align-items: center; gap: 18px; }
-            .item-img { width: 48px; height: 48px; background: ${isAlert ? '#fda4af' : '#ccd9ff'}; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: ${accentColor}; font-weight: 900; font-size: 20px; }
+            .item-img { width: 48px; height: 48px; background: ${isExpirationAlert ? '#fda4af' : '#ccd9ff'}; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: ${accentColor}; font-weight: 900; font-size: 20px; }
             .item-name { font-size: 16px; font-weight: 700; color: #1a1a1a; }
             .item-qty { font-size: 12px; color: #777; margin-top: 4px; font-weight: 600; }
-            .divider { border-top: 1px dashed ${isAlert ? '#fecaca' : '#ccd9ff'}; margin: 30px 0; }
+            .divider { border-top: 1px dashed ${isExpirationAlert ? '#fecaca' : '#ccd9ff'}; margin: 30px 0; }
             .total-row { display: flex; justify-content: space-between; align-items: center; }
             .total-label { font-size: 18px; font-weight: 800; color: #001a66; }
             .total-value { font-size: 24px; font-weight: 950; color: ${accentColor}; }
@@ -73,7 +78,7 @@ export async function sendEmail(payload: EmailPayload): Promise<boolean> {
                 </div>
                 <p class="content">${payload.subject.includes('Welcome') ? "We're thrilled to have you on board! Your high-speed connection is now being provisioned and will be active shortly." : payload.text.split('\n')[0]}</p>
                 
-                ${!isAlert ? `<a href="#" class="btn">Download PDF Receipt</a>` : ''}
+                ${!isExpirationAlert ? `<a href="#" class="btn">Download PDF Receipt</a>` : ''}
             </div>
             <div class="summary">
                 <div class="summary-title">Network Details</div>
@@ -88,8 +93,8 @@ export async function sendEmail(payload: EmailPayload): Promise<boolean> {
                 </div>
                 <div class="divider"></div>
                 <div class="total-row">
-                    <span class="total-label">${isAlert ? 'Package' : 'Total Paid'}</span>
-                    <span class="total-value">${isAlert ? packageName : amount}</span>
+                    <span class="total-label">${isExpirationAlert ? 'Package Detail' : 'Total Payment Confirmed'}</span>
+                    <span class="total-value">${isExpirationAlert ? packageName : amount}</span>
                 </div>
             </div>
             <div class="footer">

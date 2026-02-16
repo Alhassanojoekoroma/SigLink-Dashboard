@@ -14,7 +14,7 @@ async function testDirectResend() {
         console.log("Sending direct test email...")
         const { data, error } = await resend.emails.send({
             from: 'SigLink <onboarding@resend.dev>',
-            to: ['alhassanojoek@gmail.com'],
+            to: ['[banardlama101@gmail.com,]', 'alhassanojoek@gmail.com'],
             subject: 'Direct Script Test',
             html: '<p>If you see this, the API key and Resend connection are working.</p>'
         })
