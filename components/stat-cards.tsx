@@ -19,44 +19,48 @@ const cards = [
     label: "Total Revenue",
     icon: DollarSign,
     format: (v: number) => `NLe ${v.toLocaleString()}`,
-    color: "from-blue-50 to-blue-100/30 dark:from-blue-900/10 dark:to-blue-800/5",
-    accent: "text-blue-600 dark:text-blue-400",
-    iconColor: "bg-blue-600/10 text-blue-600",
+    color: "from-blue-100 to-blue-200/40 dark:from-blue-900/40 dark:to-blue-800/20",
+    accent: "text-blue-700 dark:text-blue-400",
+    iconColor: "bg-blue-600/20 text-blue-700 dark:text-blue-400",
     trend: "+2.5% vs last week",
-    trendUp: true
+    trendUp: true,
+    borderColor: "border-blue-200 dark:border-blue-800/50"
   },
   {
     key: "active" as const,
     label: "Active Stations",
     icon: Radio,
     format: (v: number) => String(v),
-    color: "from-purple-50 to-purple-100/30 dark:from-purple-900/10 dark:to-purple-800/5",
-    accent: "text-purple-600 dark:text-purple-400",
-    iconColor: "bg-purple-600/10 text-purple-600",
+    color: "from-indigo-100 to-indigo-200/40 dark:from-indigo-900/40 dark:to-indigo-800/20",
+    accent: "text-indigo-700 dark:text-indigo-400",
+    iconColor: "bg-indigo-600/20 text-indigo-700 dark:text-indigo-400",
     trend: "+25% total growth",
-    trendUp: true
+    trendUp: true,
+    borderColor: "border-indigo-200 dark:border-indigo-800/50"
   },
   {
     key: "pending" as const,
     label: "Pending Installs",
     icon: Clock,
     format: (v: number) => (v).toLocaleString(),
-    color: "from-orange-50 to-orange-100/30 dark:from-orange-900/10 dark:to-orange-800/5",
-    accent: "text-orange-600 dark:text-orange-400",
-    iconColor: "bg-orange-600/10 text-orange-600",
+    color: "from-amber-100 to-amber-200/40 dark:from-amber-900/40 dark:to-amber-800/20",
+    accent: "text-amber-700 dark:text-amber-400",
+    iconColor: "bg-amber-600/20 text-amber-700 dark:text-amber-400",
     trend: "-0.5% vs yesterday",
-    trendUp: false
+    trendUp: false,
+    borderColor: "border-amber-200 dark:border-amber-800/50"
   },
   {
     key: "alerts" as const,
     label: "Urgent Alerts",
     icon: AlertTriangle,
     format: (v: number) => (v).toLocaleString(),
-    color: "from-emerald-50 to-emerald-100/30 dark:from-emerald-900/10 dark:to-emerald-800/5",
-    accent: "text-emerald-600 dark:text-emerald-400",
-    iconColor: "bg-emerald-600/10 text-emerald-600",
+    color: "from-rose-100 to-rose-200/40 dark:from-rose-900/40 dark:to-rose-800/20",
+    accent: "text-rose-700 dark:text-rose-400",
+    iconColor: "bg-rose-600/20 text-rose-700 dark:text-rose-400",
     trend: "+12% conversions",
-    trendUp: true
+    trendUp: true,
+    borderColor: "border-rose-200 dark:border-rose-800/50"
   },
 ]
 
@@ -116,9 +120,10 @@ export function StatCards({
             <div
               key={card.key}
               className={cn(
-                "group relative flex flex-col justify-between overflow-hidden rounded-[32px] border border-border/60 bg-gradient-to-br p-7",
+                "group relative flex flex-col justify-between overflow-hidden rounded-[32px] border bg-gradient-to-br p-7",
                 "transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/5",
                 card.color,
+                card.borderColor,
                 "animate-fade-in-up"
               )}
               style={{ animationDelay: `${i * 100}ms`, animationFillMode: "backwards" }}
