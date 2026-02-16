@@ -31,7 +31,12 @@ export async function syncToAirtable(record: Subscription) {
         fields["Location"] = record.service_location
         fields["Email"] = record.email || ""
         fields["Phone"] = record.phone_number
-        fields["Starlink Admin"] = record.admin_email
+
+        // Only include Starlink Admin if you've added the column to Airtable
+        // To avoid 422 errors, you must name the column EXACTLY "Starlink Admin"
+        if (record.admin_email) {
+            fields["Starlink Admin"] = record.admin_email
+        }
 
         const body = { records: [{ fields }] }
 

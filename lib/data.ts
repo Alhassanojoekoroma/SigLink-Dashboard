@@ -94,51 +94,46 @@ export async function addSubscription(
     throw error
   }
 
-  // EMAIL TRIGGER
-  try {
-    const admins = await getNotificationEmails();
-    console.log(`Found ${admins.length} notification recipients.`);
+  // Perform Emails and Airtable sync in the background so the UI returns instantly
+  (async () => {
+    try {
+      const admins = await getNotificationEmails();
 
-    // 1. Send to customer
-    const customerEmail = data.email || `${data.organization_name.replace(/\s+/g, '.').toLowerCase()}@example.com`;
-    await sendEmail({
-      to: customerEmail,
-      subject: "Welcome to SigLink - Subscription Active",
-      text: `Your subscription for ${data.package_name} is now active. Station: ${data.station_nickname}. Expires on ${new Date(data.end_date).toLocaleDateString()}.`
-    });
+      // 1. Send to customer (Using generic 'to' if Resend restriction applies)
+      const customerEmail = data.email || "recipient@example.com";
+      await sendEmail({
+        to: customerEmail,
+        subject: "Welcome to SigLink - Subscription Active",
+        text: `Your subscription for ${data.package_name} is now active. Station: ${data.station_nickname}. Expires on ${new Date(data.end_date).toLocaleDateString()}.`
+      });
 
-    // 2. Send to admins/IT/Finance
-    for (const admin of admins) {
-      if (admin.active !== false && admin.email) {
-        console.log(`Sending notification to: ${admin.email} (${admin.label})`);
-        // Clean up package name to remove "200GB" etc if present
-        const cleanPkg = data.package_name.replace(/\d+GB/gi, '').trim();
-
-        await sendEmail({
-          to: admin.email,
-          subject: `SigLink Alert: New Subscription [${data.organization_name}]`,
-          text: `A new subscription has been created.\n\n` +
-            `Organization: ${data.organization_name}\n` +
-            `Contact: ${data.customer_name}\n` +
-            `Station: ${data.station_nickname}\n` +
-            `Package: ${cleanPkg}\n` +
-            `Date: ${new Date(data.start_date).toLocaleDateString()}\n` +
-            `Amount: NLe ${data.amount_paid}`
-        });
+      // 2. Send to admins
+      for (const admin of admins) {
+        if (admin.active !== false && admin.email) {
+          const cleanPkg = data.package_name.replace(/\d+GB/gi, '').trim();
+          await sendEmail({
+            to: admin.email,
+            subject: `SigLink Alert: New Subscription [${data.organization_name}]`,
+            text: `A new subscription has been created.\n\n` +
+              `Organization: ${data.organization_name}\n` +
+              `Contact: ${data.customer_name}\n` +
+              `Station: ${data.station_nickname}\n` +
+              `Package: ${cleanPkg}\n` +
+              `Date: ${new Date(data.start_date).toLocaleDateString()}\n` +
+              `Amount: NLe ${data.amount_paid}`
+          });
+        }
       }
+    } catch (err) {
+      console.error("Background Email Error:", err);
     }
 
-  } catch (emailErr) {
-    console.error("Critical error in notification loop:", emailErr);
-  }
-
-  // AIRTABLE SYNC (Always try, even if email fails)
-  try {
-    console.log("Starting Airtable sync...");
-    await syncToAirtable(data as Subscription);
-  } catch (airtableErr) {
-    console.error("Critical error in Airtable sync:", airtableErr);
-  }
+    try {
+      await syncToAirtable(data as Subscription);
+    } catch (err) {
+      console.error("Background Airtable Error:", err);
+    }
+  })();
 
   return data as Subscription;
 }

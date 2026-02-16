@@ -52,8 +52,8 @@ export default function DashboardPage() {
     groups: CompanyGroup[]
   }>(`/api/dashboard/all?period=${statsPeriod}`, fetcher, {
     keepPreviousData: true,
-    revalidateOnFocus: false,
-    revalidateIfStale: false
+    revalidateOnFocus: true,
+    revalidateIfStale: true
   })
 
   const metrics = dashboardData?.metrics
